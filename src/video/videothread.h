@@ -1,5 +1,6 @@
 #pragma once
 
+#include "video/optical_flow/OpticalFlow.h"
 #include <QImage>
 #include <QMutex>
 #include <QObject>
@@ -28,4 +29,5 @@ private:
   QMutex mutex;
   int cameraIndex;
   QString path;
+  OpticalFlow opticalFlow;
 };

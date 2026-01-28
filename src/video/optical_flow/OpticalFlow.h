@@ -1,6 +1,7 @@
 #ifndef OPTICALFLOW_H
 #define OPTICALFLOW_H
 #include "opencv2/imgproc/imgproc.hpp"
+#include "opencv2/video/tracking.hpp"
 using namespace cv;
 using namespace std;
 class OpticalFlow {
