@@ -17,6 +17,21 @@ qt_add_executable(objects_tracking
 
 )
 
+# Define the source and destination directories
+set(SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/res")
+# Use CMAKE_CURRENT_BINARY_DIR to place the copy in the corresponding build directory
+set(DESTINATION_DIR "${CMAKE_CURRENT_BINARY_DIR}/res")
+
+# Add a custom target to perform the copy operation
+add_custom_target(copy_assets
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+    "${SOURCE_DIR}"
+    "${DESTINATION_DIR}"
+    COMMENT "Copying assets to build directory"
+)
+
+add_dependencies(objects_tracking copy_assets)
+
 target_link_libraries(objects_tracking
     PRIVATE
         Qt::Core
