@@ -71,7 +71,9 @@ void VideoThread::run() {
       // Convert BGR to RGB
       cv::cvtColor(frame, frame, cv::COLOR_BGR2RGB);
 
-      frame = opticalFlow.calcOpticaFlow(frame);
+      // frame = opticalFlow.calcOpticaFlow(frame);
+
+      frame = objectDetector.detectAndDraw(frame);
 
       // Create QImage from OpenCV Mat
       QImage qimage(frame.data, frame.cols, frame.rows, frame.step,

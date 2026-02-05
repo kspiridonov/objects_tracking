@@ -1,5 +1,6 @@
 #pragma once
 
+#include "video/object_detector/ObjectDetector.h"
 #include "video/optical_flow/OpticalFlow.h"
 #include <QImage>
 #include <QMutex>
@@ -30,4 +31,5 @@ private:
   int cameraIndex;
   QString path;
   OpticalFlow opticalFlow;
+  ObjectDetector objectDetector;
 };

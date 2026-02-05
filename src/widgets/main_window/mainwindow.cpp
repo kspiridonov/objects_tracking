@@ -63,7 +63,9 @@ void MainWindow::setupConnections() {
 
 void MainWindow::onStartClicked() {
   if (videoThread) {
-    videoThread->startCapture(0); // 0 for default camera
+    videoThread->startCapture(0); // 0 for
+                                  // default
+                                  // camera
 
     // Connect signals after thread starts
     connect(videoThread, &VideoThread::frameCaptured, this,
@@ -98,8 +100,7 @@ void MainWindow::updateFrame(const QImage &frame) {
   // Scale image to fit label while maintaining aspect ratio
   QPixmap pixmap = QPixmap::fromImage(frame);
   if (!pixmap.isNull()) {
-    pixmap = pixmap.scaled(videoLabel->size(), Qt::KeepAspectRatio,
-                           Qt::SmoothTransformation);
+    pixmap = pixmap.scaled(videoLabel->size(), Qt::KeepAspectRatio);
     videoLabel->setPixmap(pixmap);
   }
 }

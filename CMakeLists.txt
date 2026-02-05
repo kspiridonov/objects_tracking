@@ -3,7 +3,7 @@ project(objects_tracking LANGUAGES CXX)
 
 find_package(Qt6 6.5 REQUIRED COMPONENTS Core Widgets)
 find_package(OpenCV REQUIRED )
-
+file(COPY res DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
 qt_standard_project_setup()
 
 qt_add_executable(objects_tracking
@@ -11,6 +11,9 @@ qt_add_executable(objects_tracking
     src/main.cpp
     src/video/videothread.cpp src/video/videothread.h src/widgets/main_window/mainwindow.cpp src/widgets/main_window/mainwindow.h src/main.cpp
     src/video/optical_flow/OpticalFlow.h src/video/optical_flow/OpticalFlow.cpp
+    src/video/object_detector/ObjectDetector.h src/video/object_detector/ObjectDetector.cpp
+
+    src/video/object_detector/Detection.h
 
 )
 
