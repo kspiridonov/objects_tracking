@@ -63,7 +63,7 @@ void MainWindow::setupConnections() {
 
 void MainWindow::onStartClicked() {
   if (videoThread) {
-    videoThread->startCapture(0); // 0 for
+    videoThread->startCapture("/home/ksp/D/home/lab/sample-videos/people-detection.mp4"); // 0 for
                                   // default
                                   // camera
 

@@ -27,8 +27,8 @@ protected:
 
 private:
   std::vector<std::string> classes;
-  std::string onnxModelPath = "res/models/yolov8s.onnx";
-  cv::Size2f modelInputShape = cv::Size(640, 480);
+  std::string onnxModelPath = "res/models/yolo11n.onnx";
+  cv::Size2f modelInputShape = cv::Size(640, 640);
   std::string classesTxtFile = "res/classes/classes.txt";
 
 private:

@@ -26,7 +26,7 @@ std::vector<Detection> ObjectDetector::detect(const cv::Mat &input) {
     debounceCounter++;
   } else {
     debounceCounter++;
-    if (debounceCounter == 5)
+    if (debounceCounter == 3)
       debounceCounter = 0;
   }
   return savedDetections;
