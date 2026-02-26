@@ -8,7 +8,9 @@
 #include <QPushButton>
 #include <QTimer>
 #include <QVBoxLayout>
-class MainWindow : public QMainWindow {
+#include <exception>
+class MainWindow : public QMainWindow
+{
   Q_OBJECT
 public:
   MainWindow(QWidget *parent = nullptr);
@@ -18,6 +20,7 @@ private slots:
   void onStopClicked();
   void updateFrame(const QImage &frame);
   void onError(const QString &error);
+  void onException(std::exception ex);
 
 private:
   void setupUI();

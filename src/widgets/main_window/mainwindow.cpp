@@ -2,24 +2,28 @@
 #include <QDateTime>
 #include <QDebug>
 #include <QMessageBox>
-
+#include "logger/logger.h"
 MainWindow::MainWindow(QWidget *parent)
-    : QMainWindow{parent}, videoThread(nullptr) {
+    : QMainWindow{parent}, videoThread(nullptr)
+{
   setupUI();
   setupConnections();
 
   // Initialize video thread
-  videoThread = new VideoThread(this);
+  videoThread = new VideoThread(this, "Video thread");
 }
 
-MainWindow::~MainWindow() {
-  if (videoThread) {
+MainWindow::~MainWindow()
+{
+  if (videoThread)
+  {
     videoThread->stopCapture();
     delete videoThread;
   }
 }
 
-void MainWindow::setupUI() {
+void MainWindow::setupUI()
+{
   // Central widget
   QWidget *centralWidget = new QWidget(this);
   setCentralWidget(centralWidget);
@@ -55,23 +59,38 @@ void MainWindow::setupUI() {
   resize(800, 600);
 }
 
-void MainWindow::setupConnections() {
+void MainWindow::setupConnections()
+{
   connect(startButton, &QPushButton::clicked, this,
           &MainWindow::onStartClicked);
   connect(stopButton, &QPushButton::clicked, this, &MainWindow::onStopClicked);
 }
 
-void MainWindow::onStartClicked() {
-  if (videoThread) {
-    videoThread->startCapture("/home/ksp/D/home/lab/sample-videos/people-detection.mp4"); // 0 for
-                                  // default
-                                  // camera
+void MainWindow::onStartClicked()
+{
+  if (videoThread)
+  {
+    videoThread->startCapture(
+        "/home/ksp/D/home/lab/sample-videos/people-detection.mp4"); // 0 for
+                                                                    // default
+                                                                    // camera
 
     // Connect signals after thread starts
-    connect(videoThread, &VideoThread::frameCaptured, this,
-            &MainWindow::updateFrame, Qt::QueuedConnection);
-    connect(videoThread, &VideoThread::errorOccurred, this,
-            &MainWindow::onError, Qt::QueuedConnection);
+    connect(videoThread,
+            &VideoThread::frameCaptured,
+            this,
+            &MainWindow::updateFrame,
+            Qt::QueuedConnection);
+    connect(videoThread,
+            &VideoThread::errorOccurred,
+            this,
+            &MainWindow::onError,
+            Qt::QueuedConnection);
+    connect(videoThread,
+            &VideoThread::exceptionOccurred,
+            this,
+            &MainWindow::onException,
+            Qt::QueuedConnection);            
 
     startButton->setEnabled(false);
     stopButton->setEnabled(true);
@@ -79,8 +98,10 @@ void MainWindow::onStartClicked() {
   }
 }
 
-void MainWindow::onStopClicked() {
-  if (videoThread) {
+void MainWindow::onStopClicked()
+{
+  if (videoThread)
+  {
     videoThread->stopCapture();
 
     // Disconnect signals
@@ -88,6 +109,8 @@ void MainWindow::onStopClicked() {
                &MainWindow::updateFrame);
     disconnect(videoThread, &VideoThread::errorOccurred, this,
                &MainWindow::onError);
+    disconnect(videoThread, &VideoThread::exceptionOccurred, this,
+               &MainWindow::onException);
 
     videoLabel->setText("Stopped");
     startButton->setEnabled(true);
@@ -96,17 +119,25 @@ void MainWindow::onStopClicked() {
   }
 }
 
-void MainWindow::updateFrame(const QImage &frame) {
+void MainWindow::updateFrame(const QImage &frame)
+{
   // Scale image to fit label while maintaining aspect ratio
   QPixmap pixmap = QPixmap::fromImage(frame);
-  if (!pixmap.isNull()) {
+  if (!pixmap.isNull())
+  {
     pixmap = pixmap.scaled(videoLabel->size(), Qt::KeepAspectRatio);
     videoLabel->setPixmap(pixmap);
   }
 }
 
-void MainWindow::onError(const QString &error) {
+void MainWindow::onError(const QString &error)
+{
   QMessageBox::warning(this, "Error", error);
   onStopClicked();
   statusLabel->setText("Error: " + error);
+}
+
+void MainWindow::onException(std::exception ex)
+{
+  throw ex;
 }

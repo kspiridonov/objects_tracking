@@ -1,27 +1,32 @@
 #pragma once
 
 #include "video/object_detector/ObjectDetector.h"
-#include "video/optical_flow/OpticalFlow.h"
 #include <QImage>
 #include <QMutex>
 #include <QObject>
-#include <QThread>
+#include <QString>
 #include <opencv2/opencv.hpp>
-class VideoThread : public QThread {
+#include "core/qthread/base_thread.h"
+#include "frame_processors/base_frame_processor/frame_processor_listener.h"
+#include "core/area/area.h"
+#include "frame_processors/moved_areas_frame_processor/moved_areas_frame_processor.h"
+class VideoThread : public BaseQThread, FrameProcessorListener<Area>
+{
   Q_OBJECT
 public:
-  VideoThread(QObject *parent = nullptr);
+  VideoThread(QObject *parent, QString name);
   ~VideoThread();
   void startCapture(int cameraIndex = 0);
   void startCapture(const QString &path);
   void stopCapture();
   bool isRunning() const;
+  void frameProcessed(Mat &frame, vector<Area> list) override;
 signals:
   void frameCaptured(const QImage &frame);
   void errorOccurred(const QString &error);
 
 protected:
-  void run() override;
+  void runMethod() override;
 
 private:
   int const NO_CAM = -1;
@@ -30,6 +35,5 @@ private:
   QMutex mutex;
   int cameraIndex;
   QString path;
-  OpticalFlow opticalFlow;
-  ObjectDetector objectDetector;
+  MovedAreasFrameProcessor movedAreasProcessor;
 };
