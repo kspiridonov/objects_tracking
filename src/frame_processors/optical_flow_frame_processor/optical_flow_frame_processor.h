@@ -1,25 +1,31 @@
 #ifndef OPTICALFLOW_H
 #define OPTICALFLOW_H
+#include "optical_flow_rect_info.h"
 #include "opencv2/imgproc/imgproc.hpp"
 #include "opencv2/video/tracking.hpp"
 #include "frame_processors/base_frame_processor/base_frame_processor.h"
 using namespace cv;
 using namespace std;
-class OpticalFlowFrameProcessor: public BaseFrameProcessor<Rect>
-{
+
+class OpticalFlowFrameProcessor : public BaseFrameProcessor<OpticalFlowRectInfo> {
 public:
-  OpticalFlowFrameProcessor(bool need2DrawOpticalFlow, bool need2DrawRectangles) : need2DrawOpticalFlow(need2DrawOpticalFlow), need2DrawRectangles(need2DrawRectangles) {}
-  void processFrame(Mat &currentFrame) override;
+    explicit OpticalFlowFrameProcessor(const bool debug) : showDebugInfo(debug) {
+    }
+
+    void processFrame(Mat &currentFrame) override;
 
 protected:
-  vector<Rect> findRects(const Mat &flowImage);
-  void drawOpticalFlowOnResult(const Mat &flowImage, Mat &result);
-  void drawRectanglesOnResult(vector<Rect> &rects, Mat &result);
+    vector<Rect> findRects(const Mat &flowImage);
+
+    void drawOpticalFlowOnResult(const Mat &flowImage, Mat &result, int *vectorX, int *vectorY);
+
+    void drawRectanglesOnResult(vector<Rect> &rects, Mat &result, Scalar color);
+
+    vector<OpticalFlowRectInfo> getOpticalFlowRectsInfo(Mat &frame, const Mat &flowImage, const vector<Rect> &rects);
 
 private:
-  bool need2DrawOpticalFlow;
-  bool need2DrawRectangles;
-  Mat previousFrame;
+    bool showDebugInfo = false;
+    Mat previousFrame;
 };
 
 #endif // OPTICALFLOW_H

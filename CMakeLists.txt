@@ -1,10 +1,13 @@
 cmake_minimum_required(VERSION 3.19)
 project(objects_tracking LANGUAGES CXX)
+set(CMAKE_PREFIX_PATH "/opt/vcpkg/installed/x64-linux;/home/ksp/Qt/6.9.0/gcc_64")
+set(CMAKE_TOOLCHAIN_FILE "ENV{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake")
 find_package(Qt6 6.5 REQUIRED COMPONENTS Core Widgets Test)
 find_package(OpenCV REQUIRED )
 find_package(fmt CONFIG REQUIRED)
 find_package(log4cplus CONFIG REQUIRED)
 find_package(cpptrace REQUIRED)
+find_package(Boost REQUIRED COMPONENTS uuid)
 file(COPY res DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
 qt_standard_project_setup()
 
@@ -23,20 +26,19 @@ qt_add_executable(objects_tracking
     src/core/qthread/q_thread_exception.h
     src/core/qthread/base_thread.cpp
 
-    src/core/area/area.h
-    src/core/area/area.cpp
+    src/core/movement_area/movement_area.h
+    src/core/movement_area/movement_area.cpp
 
     src/frame_processors/base_frame_processor/base_frame_processor.h
     src/frame_processors/base_frame_processor/base_frame_processor.cpp
     src/frame_processors/base_frame_processor/frame_processor_listener.h
 
+    src/frame_processors/optical_flow_frame_processor/optical_flow_rect_info.h 
     src/frame_processors/optical_flow_frame_processor/optical_flow_frame_processor.h 
     src/frame_processors/optical_flow_frame_processor/optical_flow_frame_processor.cpp
 
-    src/frame_processors/moved_areas_frame_processor/moved_areas_frame_processor.h 
-    src/frame_processors/moved_areas_frame_processor/moved_areas_frame_processor.cpp
-
-
+    src/frame_processors/movement_areas_frame_processor/movement_areas_frame_processor.h 
+    src/frame_processors/movement_areas_frame_processor/movement_areas_frame_processor.cpp
 
 )
 
@@ -64,6 +66,7 @@ target_link_libraries(objects_tracking
         fmt::fmt
         cpptrace::cpptrace
         log4cplus::log4cplus
+        Boost::uuid
 )
 include_directories( ${OpenCV_INCLUDE_DIRS} )
 include_directories("./src")

@@ -1,7 +1,7 @@
 #include "videothread.h"
 #include "logger/logger.h"
 #include "core/qthread/q_thread_exception.h"
-VideoThread::VideoThread(QObject *parent, QString name) : BaseQThread(parent, name), FrameProcessorListener<Area>("VideoThread"), running(false), cameraIndex(0)
+VideoThread::VideoThread(QObject *parent, QString name) : BaseQThread(parent, name), FrameProcessorListener<MovementArea>("VideoThread"), running(false), cameraIndex(0)
 {
   movedAreasProcessor.addListener(this);
 }
@@ -87,8 +87,6 @@ void VideoThread::runMethod()
       break;
     }
 
-    Logger.trace("Get new fame");
-
     if (!frame.empty())
     {
       // Convert BGR to RGB
@@ -107,14 +105,26 @@ void VideoThread::runMethod()
   }
 }
 
-void VideoThread::frameProcessed(Mat &frame, vector<Area> list)
+void VideoThread::frameProcessed(Mat &frame, vector<MovementArea> list)
 {
-  // frame = opticalFlow.calcOpticaFlow(frame);
   //  Create QImage from OpenCV Mat
+  drawAreas(frame, list);
   QImage qimage(frame.data, frame.cols, frame.rows, frame.step, QImage::Format_RGB888);
 
   // Clone the image to ensure data persists
   QImage clonedImage = qimage.copy();
   // Emit signal with the image
   emit frameCaptured(clonedImage);
+}
+
+void VideoThread::drawAreas(Mat &frame, vector<MovementArea> areas)
+{
+  /*for (size_t i = 0; i < areas.size(); i++)
+  {
+    if (areas[i].getSquare() > 1000)
+    { // Игнорируем маленькие контуры
+      cv::Rect bounding_box = areas[i].getRect();
+      cv::rectangle(frame, bounding_box, cv::Scalar(0, 255, 0), 2);
+    }
+  }*/
 }
