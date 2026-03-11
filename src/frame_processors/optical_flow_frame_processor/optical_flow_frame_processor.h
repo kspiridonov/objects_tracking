@@ -1,13 +1,11 @@
 #ifndef OPTICALFLOW_H
 #define OPTICALFLOW_H
-#include "optical_flow_rect_info.h"
-#include "opencv2/imgproc/imgproc.hpp"
-#include "opencv2/video/tracking.hpp"
+#include "core/rect/optical_flow_rect/optical_flow_rect.h"
 #include "frame_processors/base_frame_processor/base_frame_processor.h"
 using namespace cv;
 using namespace std;
 
-class OpticalFlowFrameProcessor : public BaseFrameProcessor<OpticalFlowRectInfo> {
+class OpticalFlowFrameProcessor : public BaseFrameProcessor<OpticalFlowRect> {
 public:
     explicit OpticalFlowFrameProcessor(const bool debug) : showDebugInfo(debug) {
     }
@@ -21,7 +19,7 @@ protected:
 
     void drawRectanglesOnResult(vector<Rect> &rects, Mat &result, Scalar color);
 
-    vector<OpticalFlowRectInfo> getOpticalFlowRectsInfo(Mat &frame, const Mat &flowImage, const vector<Rect> &rects);
+    vector<OpticalFlowRect> getOpticalFlowRects(Mat &frame, const Mat &flowImage, const vector<Rect> &rects);
 
 private:
     bool showDebugInfo = false;

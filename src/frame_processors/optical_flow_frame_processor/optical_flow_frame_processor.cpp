@@ -28,15 +28,15 @@ void OpticalFlowFrameProcessor::processFrame(Mat &currentFrame) {
         Mat result = previousFrame.clone();
         Mat clonedFlowImage = flowImage.clone();
         vector<Rect> rects = findRects(clonedFlowImage);
-        auto rectsInfo = getOpticalFlowRectsInfo(result, flowImage, rects);
+        auto rectsInfo = getOpticalFlowRects(result, flowImage, rects);
 
         previousFrame = currentFrame.clone();
         if (showDebugInfo) {
             vector<Rect> rectsToDraw;
             vector<Rect> movedRectsToDraw;
             for (auto &rect: rectsInfo) {
-                rectsToDraw.push_back(rect.getCurrentRect());
-                movedRectsToDraw.push_back(rect.getMovedToPreviousPositionRect());
+                rectsToDraw.push_back(rect.getRect());
+                movedRectsToDraw.push_back(rect.getPreviousRect());
             }
             drawRectanglesOnResult(rectsToDraw, result, Scalar(0, 255, 0));
             drawRectanglesOnResult(movedRectsToDraw, result, Scalar(255, 0, 0));
@@ -112,9 +112,9 @@ void OpticalFlowFrameProcessor::drawRectanglesOnResult(vector<Rect> &rects, Mat 
     // cvtColor(motion_mask,result,COLOR_GRAY2BGR);
 }
 
-vector<OpticalFlowRectInfo> OpticalFlowFrameProcessor::getOpticalFlowRectsInfo(Mat &frame, const Mat &flowImage,
+vector<OpticalFlowRect> OpticalFlowFrameProcessor::getOpticalFlowRects(Mat &frame, const Mat &flowImage,
                                                                                const vector<Rect> &rects) {
-    vector<OpticalFlowRectInfo> rectsInfo;
+    vector<OpticalFlowRect> opticalFlowRects;
     for (auto rect: rects) {
         auto croppedOpticalFlow = Mat(flowImage, rect);
         auto croppedFrame = frame(rect);
@@ -143,8 +143,8 @@ vector<OpticalFlowRectInfo> OpticalFlowFrameProcessor::getOpticalFlowRectsInfo(M
         int roundedPtY = -1 * cvRound(ptY);
         movedRect.x += roundedPtX;
         movedRect.y += roundedPtY;
-        rectsInfo.push_back(OpticalFlowRectInfo(rect, movedRect));
+        opticalFlowRects.push_back(OpticalFlowRect(rect, movedRect));
         if (showDebugInfo)drawOpticalFlowOnResult(croppedOpticalFlow, croppedFrame, &roundedPtX, &roundedPtY);
     }
-    return rectsInfo;
+    return opticalFlowRects;
 }

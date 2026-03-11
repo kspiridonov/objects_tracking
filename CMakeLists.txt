@@ -8,6 +8,7 @@ find_package(fmt CONFIG REQUIRED)
 find_package(log4cplus CONFIG REQUIRED)
 find_package(cpptrace REQUIRED)
 find_package(Boost REQUIRED COMPONENTS uuid)
+find_package(magic_enum CONFIG REQUIRED)
 file(COPY res DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
 qt_standard_project_setup()
 
@@ -26,19 +27,21 @@ qt_add_executable(objects_tracking
     src/core/qthread/q_thread_exception.h
     src/core/qthread/base_thread.cpp
 
-    src/core/movement_area/movement_area.h
-    src/core/movement_area/movement_area.cpp
+        src/core/rect/movement_rect/movement_rect.h
+        src/core/rect/movement_rect/movement_rect.cpp
 
     src/frame_processors/base_frame_processor/base_frame_processor.h
     src/frame_processors/base_frame_processor/base_frame_processor.cpp
     src/frame_processors/base_frame_processor/frame_processor_listener.h
 
-    src/frame_processors/optical_flow_frame_processor/optical_flow_rect_info.h 
     src/frame_processors/optical_flow_frame_processor/optical_flow_frame_processor.h 
     src/frame_processors/optical_flow_frame_processor/optical_flow_frame_processor.cpp
 
-    src/frame_processors/movement_areas_frame_processor/movement_areas_frame_processor.h 
-    src/frame_processors/movement_areas_frame_processor/movement_areas_frame_processor.cpp
+        src/frame_processors/movement_rects_frame_processor/movement_rects_frame_processor.h
+        src/frame_processors/movement_rects_frame_processor/movement_rects_frame_processor.cpp
+        src/core/rect/base_rect.h
+        src/core/rect/optical_flow_rect/optical_flow_rect.h
+        src/core/exception/standart_exception.h
 
 )
 
@@ -67,6 +70,7 @@ target_link_libraries(objects_tracking
         cpptrace::cpptrace
         log4cplus::log4cplus
         Boost::uuid
+        magic_enum::magic_enum
 )
 include_directories( ${OpenCV_INCLUDE_DIRS} )
 include_directories("./src")

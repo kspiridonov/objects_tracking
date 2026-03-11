@@ -41,6 +41,8 @@ void MainWindow::setupUI()
 
   // Status label
   statusLabel = new QLabel("Ready", this);
+  statusLabel->setStyleSheet("border: 2px solid black;");
+  statusLabel->setMaximumHeight(30);
   mainLayout->addWidget(statusLabel);
 
   // Button layout

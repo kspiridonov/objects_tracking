@@ -11,7 +11,7 @@ class BaseFrameProcessor
 
 public:
     virtual void processFrame(Mat &currentFrame) = 0;
-    void fireFrameProcessed(Mat &currentFrame, vector<T> list)
+    void fireFrameProcessed(Mat &currentFrame, const vector<T> & list)
     {
         for (auto const &entry : listeners)
         {

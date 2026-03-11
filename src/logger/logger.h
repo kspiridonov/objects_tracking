@@ -18,6 +18,14 @@ enum class LogLevel : int
 class Log
 {
 public:
+    bool isDebugEnabled() {
+        auto logger = log4cplus::Logger::getInstance(LOG4CPLUS_TEXT("main"));
+        return logger.isEnabledFor(log4cplus::DEBUG_LOG_LEVEL);
+    }
+    bool isTraceEnabled() {
+        auto logger = log4cplus::Logger::getInstance(LOG4CPLUS_TEXT("main"));
+        return logger.isEnabledFor(log4cplus::TRACE_LOG_LEVEL);
+    }
     void setLogLevel(LogLevel level)
     {
         auto logger = log4cplus::Logger::getInstance(LOG4CPLUS_TEXT("main"));

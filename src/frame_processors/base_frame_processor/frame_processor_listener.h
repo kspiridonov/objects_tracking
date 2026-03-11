@@ -11,7 +11,7 @@ class FrameProcessorListener
 public:
     FrameProcessorListener(std::string id) : id(id) {}
     virtual std::string getId() { return id; };
-    virtual void frameProcessed(Mat &frame, vector<T> list) = 0;
+    virtual void frameProcessed(Mat &frame, const vector<T> & list) = 0;
     
 private:
     string id;

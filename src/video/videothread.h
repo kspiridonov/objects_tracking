@@ -8,9 +8,8 @@
 #include <opencv2/opencv.hpp>
 #include "core/qthread/base_thread.h"
 #include "frame_processors/base_frame_processor/frame_processor_listener.h"
-#include "core/movement_area/movement_area.h"
-#include "frame_processors/movement_areas_frame_processor/movement_areas_frame_processor.h"
-class VideoThread : public BaseQThread, FrameProcessorListener<MovementArea>
+#include "frame_processors/movement_rects_frame_processor/movement_rects_frame_processor.h"
+class VideoThread : public BaseQThread, FrameProcessorListener<MovementRect>
 {
   Q_OBJECT
 public:
@@ -20,14 +19,14 @@ public:
   void startCapture(const QString &path);
   void stopCapture();
   bool isRunning() const;
-  void frameProcessed(Mat &frame, vector<MovementArea> list) override;
+  void frameProcessed(Mat &frame, const vector<MovementRect> & list) override;
 signals:
   void frameCaptured(const QImage &frame);
   void errorOccurred(const QString &error);
 
 protected:
   void runMethod() override;
-  void drawAreas(Mat &frame,vector<MovementArea> areas);
+  void drawRects(Mat &frame,vector<MovementRect> rects);
 
 private:
   int const NO_CAM = -1;
@@ -36,5 +35,5 @@ private:
   QMutex mutex;
   int cameraIndex;
   QString path;
-  MovementAreasFrameProcessor movedAreasProcessor;
+  MovementRectsFrameProcessor movedAreasProcessor;
 };
