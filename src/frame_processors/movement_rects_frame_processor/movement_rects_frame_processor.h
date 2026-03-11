@@ -5,10 +5,10 @@
 #include "frame_processors/base_frame_processor/frame_processor_listener.h"
 
 struct MovementRectChanges {
-    set<MovementRect> forRemove;
-    set<OpticalFlowRect> forAdd;
-    map<OpticalFlowRect, set<MovementRect> > forMerge;
-    map<MovementRect, set<OpticalFlowRect> > forSplit;
+    map<string, MovementRect> forRemove;
+    map<string, OpticalFlowRect> forAdd;
+    map<OpticalFlowRect, map<string, MovementRect> > forMerge;
+    map<MovementRect, map<string, OpticalFlowRect> > forSplit;
     map<MovementRect, OpticalFlowRect> forUpdate;
 };
 
@@ -26,18 +26,18 @@ public:
 protected:
     MovementRectChanges getChanges(const vector<OpticalFlowRect> &oRects);
 
-    set<OpticalFlowRect> findForAdd(map<OpticalFlowRect, shared_ptr<MovementRect> > &linkedORectWithMRect,
-                                    map<MovementRect, shared_ptr<OpticalFlowRect> > &linkedMRectWithORect);
+    map<string, OpticalFlowRect> findForAdd(map<OpticalFlowRect, shared_ptr<MovementRect> > &linkedORectWithMRect,
+                                            map<MovementRect, shared_ptr<OpticalFlowRect> > &linkedMRectWithORect);
 
-    set<MovementRect> findForRemove(map<OpticalFlowRect, shared_ptr<MovementRect> > &linkedORectWithMRect,
-                                    map<MovementRect, shared_ptr<OpticalFlowRect> > &linkedMRectWithORect,
-                                    set<OpticalFlowRect> &forAdd);
+    map<string, MovementRect> findForRemove(map<OpticalFlowRect, shared_ptr<MovementRect> > &linkedORectWithMRect,
+                                            map<MovementRect, shared_ptr<OpticalFlowRect> > &linkedMRectWithORect,
+                                            map<string, OpticalFlowRect> &forAdd);
 
-    map<OpticalFlowRect, set<MovementRect> > findForMerge(
+    map<OpticalFlowRect, map<string, MovementRect> > findForMerge(
         map<OpticalFlowRect, shared_ptr<MovementRect> > &linkedORectWithMRect,
         map<MovementRect, shared_ptr<OpticalFlowRect> > &linkedMRectWithORect);
 
-    map<MovementRect, set<OpticalFlowRect> > findForSplit(
+    map<MovementRect, map<string, OpticalFlowRect> > findForSplit(
         map<OpticalFlowRect, shared_ptr<MovementRect> > &linkedORectWithMRect,
         map<MovementRect, shared_ptr<OpticalFlowRect> > &linkedMRectWithORect);
 
@@ -63,5 +63,5 @@ protected:
 
 protected:
     OpticalFlowFrameProcessor opticalFlowFrameProcessor = OpticalFlowFrameProcessor(false);
-    set<MovementRect> mRects;
+    map<string, MovementRect> mRects;
 };

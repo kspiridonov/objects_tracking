@@ -48,7 +48,7 @@ private:
 
     static OpticalFlowRect getORectForMerge1();
 
-    static set<MovementRect> getMRectsForMerge1();
+    static map<string, MovementRect> getMRectsForMerge1();
 
     static vector<OpticalFlowRect> getORectsForSplit1();
 
@@ -59,8 +59,8 @@ void MovementRectsFrameProcessorTest::findLinksForORectsWithMRectsTest() {
     mRects.clear();
     auto mRect1 = getMRect1();
     auto mRect2 = getMRect2();
-    mRects.insert(mRect1);
-    mRects.insert(mRect2);
+    mRects.insert_or_assign(mRect1.getId(), mRect1);
+    mRects.insert_or_assign(mRect2.getId(), mRect2);
     auto oRect1 = getORect1();
     auto oRect2 = getORect2();
     vector<OpticalFlowRect> oRects{oRect1, oRect2};
@@ -81,8 +81,8 @@ void MovementRectsFrameProcessorTest::findLinksForMRectsWithORectsTest() {
     mRects.clear();
     auto mRect1 = getMRect1();
     auto mRect2 = getMRect2();
-    mRects.insert(mRect1);
-    mRects.insert(mRect2);
+    mRects.insert_or_assign(mRect1.getId(), mRect1);
+    mRects.insert_or_assign(mRect2.getId(), mRect2);
     auto oRect1 = getORect1();
     auto oRect2 = getORect2();
     vector<OpticalFlowRect> oRects{oRect1, oRect2};
@@ -102,18 +102,18 @@ void MovementRectsFrameProcessorTest::findForAddTest() {
     mRects.clear();
     auto mRect1 = getMRect1();
     auto mRect2 = getMRect2();
-    mRects.insert(mRect1);
-    mRects.insert(mRect2);
+    mRects.insert_or_assign(mRect1.getId(), mRect1);
+    mRects.insert_or_assign(mRect2.getId(), mRect2);
     auto oRect1 = getORect1();
     auto oRect2 = getORect2();
     auto oRect3 = getORect3();
     vector<OpticalFlowRect> oRects{oRect1, oRect2, oRect3};
     auto linkedForORectsWithMRects = findLinksForORectsWithMRects(oRects);
     auto linkedForMRectsWithMRects = findLinksForMRectsWithORects(oRects);
-    auto setORectsForAdd = findForAdd(linkedForORectsWithMRects, linkedForMRectsWithMRects);
-    QVERIFY(setORectsForAdd.size() == 1);
-    auto it = setORectsForAdd.find(oRect3);
-    QVERIFY(it != setORectsForAdd.end());
+    auto mapORectsForAdd = findForAdd(linkedForORectsWithMRects, linkedForMRectsWithMRects);
+    QVERIFY(mapORectsForAdd.size() == 1);
+    auto it = mapORectsForAdd.find(oRect3.getId());
+    QVERIFY(it != mapORectsForAdd.end());
 }
 
 void MovementRectsFrameProcessorTest::findForAddWithUnharmoniousDataTest() {
@@ -121,8 +121,8 @@ void MovementRectsFrameProcessorTest::findForAddWithUnharmoniousDataTest() {
     auto mRect1 = getMRect1();
     auto mRect2 = getMRect2();
     auto mRect3 = getMRect3();
-    mRects.insert(mRect1);
-    mRects.insert(mRect2);
+    mRects.insert_or_assign(mRect1.getId(), mRect1);
+    mRects.insert_or_assign(mRect2.getId(), mRect2);
     auto oRect1 = getORect1();
     auto oRect2 = getORect2();
     auto oRect3 = getORect3();
@@ -134,7 +134,7 @@ void MovementRectsFrameProcessorTest::findForAddWithUnharmoniousDataTest() {
     //
     auto setORectsForAdd = findForAdd(linkedForORectsWithMRects, linkedForMRectsWithORects);
     QVERIFY(setORectsForAdd.size() == 1);
-    auto it = setORectsForAdd.find(oRect3);
+    auto it = setORectsForAdd.find(oRect3.getId());
     QVERIFY(it != setORectsForAdd.end());
     auto itPtrORect = linkedForMRectsWithORects.find(mRect3);
     QVERIFY(itPtrORect != linkedForMRectsWithORects.end() && itPtrORect->second == nullptr);
@@ -145,19 +145,19 @@ void MovementRectsFrameProcessorTest::findForRemoveTest() {
     auto mRect1 = getMRect1();
     auto mRect2 = getMRect2();
     auto mRect3 = getMRect3();
-    mRects.insert(mRect1);
-    mRects.insert(mRect2);
-    mRects.insert(mRect3);
+    mRects.insert_or_assign(mRect1.getId(), mRect1);
+    mRects.insert_or_assign(mRect2.getId(), mRect2);
+    mRects.insert_or_assign(mRect3.getId(), mRect3);
     auto oRect1 = getORect1();
     auto oRect2 = getORect2();
     vector<OpticalFlowRect> oRects{oRect1, oRect2};
     auto linkedForORectsWithMRects = findLinksForORectsWithMRects(oRects);
     auto linkedForMRectsWithORects = findLinksForMRectsWithORects(oRects);
-    set<OpticalFlowRect> forAdd;
+    map<string, OpticalFlowRect> forAdd;
     auto forDelete = findForRemove(linkedForORectsWithMRects, linkedForMRectsWithORects, forAdd);
     QVERIFY(forDelete.size() == 1);
-    auto it = forDelete.find(mRect3);
-    QVERIFY(it != forDelete.end() && *it == mRect3);
+    auto it = forDelete.find(mRect3.getId());
+    QVERIFY(it != forDelete.end() && it->second == mRect3);
 }
 
 void MovementRectsFrameProcessorTest::findForRemoveUnharmoniousDataTest() {
@@ -165,9 +165,9 @@ void MovementRectsFrameProcessorTest::findForRemoveUnharmoniousDataTest() {
     auto mRect1 = getMRect1();
     auto mRect2 = getMRect2();
     auto mRect3 = getMRect3();
-    mRects.insert(mRect1);
-    mRects.insert(mRect2);
-    mRects.insert(mRect3);
+    mRects.insert_or_assign(mRect1.getId(), mRect1);
+    mRects.insert_or_assign(mRect2.getId(), mRect2);
+    mRects.insert_or_assign(mRect3.getId(), mRect3);
     auto oRect1 = getORect1();
     auto oRect2 = getORect2();
     auto oRect3 = getORect3();
@@ -177,43 +177,44 @@ void MovementRectsFrameProcessorTest::findForRemoveUnharmoniousDataTest() {
     // add unharmonious data
     linkedForORectsWithMRects.insert_or_assign(oRect3, make_shared<MovementRect>(mRect3));
     //
-    set<OpticalFlowRect> forAdd;
+    map<string, OpticalFlowRect> forAdd;
     auto forDelete = findForRemove(linkedForORectsWithMRects, linkedForMRectsWithORects, forAdd);
     QVERIFY(forDelete.size() == 1);
-    auto it = forDelete.find(mRect3);
-    QVERIFY(it != forDelete.end() && *it == mRect3);
+    auto it = forDelete.find(mRect3.getId());
+    QVERIFY(it != forDelete.end() && it->second == mRect3);
     QVERIFY(forAdd.size() == 1);
-    auto itForAdd = forAdd.find(oRect3);
-    QVERIFY(itForAdd != forAdd.end() && *itForAdd == oRect3);
+    auto itForAdd = forAdd.find(oRect3.getId());
+    QVERIFY(itForAdd != forAdd.end() && itForAdd->second == oRect3);
 }
 
 void MovementRectsFrameProcessorTest::findForMergeTest() {
     mRects.clear();
     auto mRectsForMerge = getMRectsForMerge1();
-    for (auto &mRectForMerge: mRectsForMerge) {
-        mRects.insert(mRectForMerge);
+    for (auto &[id,mRectForMerge]: mRectsForMerge) {
+        mRectForMerge.setState(MovementRectState::ADDED);
+        mRects.insert_or_assign(mRectForMerge.getId(), mRectForMerge);
     }
     auto oRectForMerge = getORectForMerge1();
     vector<OpticalFlowRect> oRects{oRectForMerge};
 
     auto linkedForORectsWithMRects = findLinksForORectsWithMRects(oRects);
     auto linkedForMRectsWithORects = findLinksForMRectsWithORects(oRects);
-    map<OpticalFlowRect, set<MovementRect> > forMerge = findForMerge(linkedForORectsWithMRects,
-                                                                     linkedForMRectsWithORects);
+    auto forMerge = findForMerge(linkedForORectsWithMRects,
+                                 linkedForMRectsWithORects);
     QVERIFY(forMerge.size() == 1);
     auto it = forMerge.find(oRectForMerge);
     QVERIFY(it != forMerge.end());
     auto setMRects = it->second;
     QVERIFY(setMRects.size() == 2);
-    for (auto &mRect: mRectsForMerge) {
-        QVERIFY(setMRects.find(mRect) != setMRects.end());
+    for (auto &[id,mRect]: mRectsForMerge) {
+        QVERIFY(setMRects.find(mRect.getId()) != setMRects.end());
     }
 }
 
 void MovementRectsFrameProcessorTest::findForSplitTest() {
     mRects.clear();
     auto mRectForSplit1 = getMRectForSplit1();
-    mRects.insert(mRectForSplit1);
+    mRects.insert_or_assign(mRectForSplit1.getId(), mRectForSplit1);
     auto oRects = getORectsForSplit1();
     auto linkedForORectsWithMRects = findLinksForORectsWithMRects(oRects);
     auto linkedForMRectsWithORects = findLinksForMRectsWithORects(oRects);
@@ -224,7 +225,7 @@ void MovementRectsFrameProcessorTest::findForSplitTest() {
     auto oRectsForSplit = it->second;
     QVERIFY(oRectsForSplit.size() == 2);
     for (auto &oRect: oRects) {
-        QVERIFY(oRectsForSplit.find(oRect) != oRectsForSplit.end());
+        QVERIFY(oRectsForSplit.find(oRect.getId()) != oRectsForSplit.end());
     }
 }
 
@@ -236,9 +237,9 @@ void MovementRectsFrameProcessorTest::findForUpdateTest() {
     auto mRect1 = getMRect1();
     auto mRect2 = getMRect2();
     auto mRect3 = getMRect3();
-    mRects.insert(mRect1);
-    mRects.insert(mRect2);
-    mRects.insert(mRect3);
+    mRects.insert_or_assign(mRect1.getId(), mRect1);
+    mRects.insert_or_assign(mRect2.getId(), mRect2);
+    mRects.insert_or_assign(mRect3.getId(), mRect3);
     vector<OpticalFlowRect> oRects = {oRect1, oRect2, oRect3, oRect2};
     auto linkedForORectsWithMRects = findLinksForORectsWithMRects(oRects);
     auto linkedForMRectsWithORects = findLinksForMRectsWithORects(oRects);
@@ -253,10 +254,10 @@ void MovementRectsFrameProcessorTest::processChangesAddTest() {
     MovementRectChanges changes;
     auto oRect1 = getORect1();
     auto oRect2 = getORect2();
-    changes.forAdd = {oRect1, oRect2};
+    changes.forAdd = {{oRect1.getId(), oRect1}, {oRect2.getId(), oRect2}};
     processChanges(changes);
     QVERIFY(mRects.size() == 2);
-    for (auto &mRect: mRects) {
+    for (auto &[id,mRect]: mRects) {
         QVERIFY(mRect.getState() == MovementRectState::ADDING);
     }
 }
@@ -266,12 +267,12 @@ void MovementRectsFrameProcessorTest::processChangesUpdateTest() {
     MovementRectChanges changes;
     auto oRect1 = getORect1();
     auto oRect2 = getORect2();
-    changes.forAdd = {oRect1, oRect2};
+    changes.forAdd = {{oRect1.getId(), oRect1}, {oRect2.getId(), oRect2}};
     processChanges(changes);
     QVERIFY(mRects.size() == 2);
     changes.forAdd.clear();
 
-    for (auto &mRect: mRects) {
+    for (auto &[id, mRect]: mRects) {
         QVERIFY(mRect.getState() == MovementRectState::ADDING);
         if (mRect.getRect() == oRect1.getRect()) {
             changes.forUpdate.insert_or_assign(mRect, oRect1);
@@ -281,17 +282,17 @@ void MovementRectsFrameProcessorTest::processChangesUpdateTest() {
     }
 
     processChanges(changes);
-    for (auto &mRect: mRects) {
+    for (auto &[id,mRect]: mRects) {
         QVERIFY(mRect.getState() == MovementRectState::ADDING);
     }
 
     processChanges(changes);
-    for (auto &mRect: mRects) {
+    for (auto &[id,mRect]: mRects) {
         QVERIFY(mRect.getState() == MovementRectState::ADDING);
     }
 
     processChanges(changes);
-    for (auto &mRect: mRects) {
+    for (auto &[id,mRect]: mRects) {
         QVERIFY(mRect.getState() == MovementRectState::ADDED);
     }
 }
@@ -303,34 +304,34 @@ void MovementRectsFrameProcessorTest::processChangesRemoveTest() {
     auto mRect2 = getMRect2();
     mRect1.setState(MovementRectState::ADDED);
     mRect2.setState(MovementRectState::ADDED);
-    mRects.insert(mRect1);
-    mRects.insert(mRect2);
+    mRects.insert_or_assign(mRect1.getId(), mRect1);
+    mRects.insert_or_assign(mRect2.getId(), mRect2);
     auto oRect1 = getORect1();
     vector<OpticalFlowRect> oRects = {oRect1};
     auto linkedForORectsWithMRects = findLinksForORectsWithMRects(oRects);
     auto linkedForMRectsWithORects = findLinksForMRectsWithORects(oRects);
-    set<OpticalFlowRect> forAdd;
+    map<string, OpticalFlowRect> forAdd;
     auto forRemove = findForRemove(linkedForORectsWithMRects, linkedForMRectsWithORects, forAdd);
     changes.forRemove = forRemove;
     processChanges(changes);
-    auto it = mRects.find(mRect2);
+    auto it = mRects.find(mRect2.getId());
     QVERIFY(it != mRects.end());
-    QVERIFY(it->getState() == MovementRectState::REMOVING);
+    QVERIFY(it->second.getState() == MovementRectState::REMOVING);
 
     processChanges(changes);
-    it = mRects.find(mRect2);
+    it = mRects.find(mRect2.getId());
     QVERIFY(mRects.size() == 2);
     QVERIFY(it != mRects.end());
-    QVERIFY(it->getState() == MovementRectState::REMOVING);
+    QVERIFY(it->second.getState() == MovementRectState::REMOVING);
 
     processChanges(changes);
-    it = mRects.find(mRect2);
+    it = mRects.find(mRect2.getId());
     QVERIFY(mRects.size() == 2);
     QVERIFY(it != mRects.end());
-    QVERIFY(it->getState() == MovementRectState::REMOVING);
+    QVERIFY(it->second.getState() == MovementRectState::REMOVING);
 
     processChanges(changes);
-    it = mRects.find(mRect2);
+    it = mRects.find(mRect2.getId());
     QVERIFY(mRects.size() == 1);
     QVERIFY(it == mRects.end());
 }
@@ -339,28 +340,29 @@ void MovementRectsFrameProcessorTest::processChangesMergeTest() {
     mRects.clear();
     MovementRectChanges changes;
     auto mRectsForMerge = getMRectsForMerge1();
-    for (auto &mRectForMerge: mRectsForMerge) {
-        mRects.insert(mRectForMerge);
+    for (auto &[id,mRectForMerge]: mRectsForMerge) {
+        mRectForMerge.setState(MovementRectState::ADDED);
+        mRects.insert_or_assign(mRectForMerge.getId(), mRectForMerge);
     }
     auto oRectForMerge = getORectForMerge1();
     vector<OpticalFlowRect> oRects{oRectForMerge};
 
     auto linkedForORectsWithMRects = findLinksForORectsWithMRects(oRects);
     auto linkedForMRectsWithORects = findLinksForMRectsWithORects(oRects);
-    map<OpticalFlowRect, set<MovementRect> > forMerge = findForMerge(linkedForORectsWithMRects,
-                                                                     linkedForMRectsWithORects);
+    map<OpticalFlowRect, map<string, MovementRect> > forMerge = findForMerge(linkedForORectsWithMRects,
+                                                                             linkedForMRectsWithORects);
     changes.forMerge = forMerge;
     processChanges(changes);
     QVERIFY(mRects.size() == 1);
     auto it = mRects.begin();
-    QVERIFY(it->getRect() == oRectForMerge.getRect());
+    QVERIFY(it->second.getRect() == oRectForMerge.getRect());
 }
 
 void MovementRectsFrameProcessorTest::processChangesSplitTest() {
     mRects.clear();
     MovementRectChanges changes;
     auto mRectForSplit1 = getMRectForSplit1();
-    mRects.insert(mRectForSplit1);
+    mRects.insert_or_assign(mRectForSplit1.getId(), mRectForSplit1);
     auto oRects = getORectsForSplit1();
     auto linkedForORectsWithMRects = findLinksForORectsWithMRects(oRects);
     auto linkedForMRectsWithORects = findLinksForMRectsWithORects(oRects);
@@ -371,27 +373,27 @@ void MovementRectsFrameProcessorTest::processChangesSplitTest() {
     auto oRectsForSplit = it->second;
     QVERIFY(oRectsForSplit.size() == 2);
     for (auto &oRect: oRects) {
-        QVERIFY(oRectsForSplit.find(oRect) != oRectsForSplit.end());
+        QVERIFY(oRectsForSplit.find(oRect.getId()) != oRectsForSplit.end());
     }
     changes.forSplit = forSplit;
     processChanges(changes);
     QVERIFY(mRects.size() == 1);
     auto itMRect = mRects.begin();
-    QVERIFY(itMRect->getState() == MovementRectState::SPLITTING);
+    QVERIFY(itMRect->second.getState() == MovementRectState::SPLITTING);
 
     processChanges(changes);
     QVERIFY(mRects.size() == 1);
     itMRect = mRects.begin();
-    QVERIFY(itMRect->getState() == MovementRectState::SPLITTING);
+    QVERIFY(itMRect->second.getState() == MovementRectState::SPLITTING);
 
     processChanges(changes);
     QVERIFY(mRects.size() == 1);
     itMRect = mRects.begin();
-    QVERIFY(itMRect->getState() == MovementRectState::SPLITTING);
+    QVERIFY(itMRect->second.getState() == MovementRectState::SPLITTING);
 
     processChanges(changes);
     QVERIFY(mRects.size() == 2);
-    for (auto &mRect: mRects) {
+    for (auto &[id,mRect]: mRects) {
         auto rect = mRect.getRect();
         bool found = false;
         for (auto &oRect: oRects) {
@@ -442,10 +444,12 @@ OpticalFlowRect MovementRectsFrameProcessorTest::getORectForMerge1() {
     return {rect, previousRect};
 }
 
-set<MovementRect> MovementRectsFrameProcessorTest::getMRectsForMerge1() {
-    set<MovementRect> forMerge;
-    forMerge.insert(MovementRect(Rect(590, 0, 100, 100)));
-    forMerge.insert(MovementRect(Rect(710, 0, 100, 100)));
+map<string, MovementRect> MovementRectsFrameProcessorTest::getMRectsForMerge1() {
+    map<string, MovementRect> forMerge;
+    auto merge = MovementRect(Rect(590, 0, 100, 100));
+    forMerge.insert_or_assign(merge.getId(), merge);
+    merge = MovementRect(Rect(710, 0, 100, 100));
+    forMerge.insert_or_assign(merge.getId(), merge);
     return forMerge;
 }
 

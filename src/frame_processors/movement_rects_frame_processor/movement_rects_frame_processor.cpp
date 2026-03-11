@@ -16,9 +16,9 @@ void MovementRectsFrameProcessor::frameProcessed(Mat &frame, const vector<Optica
     processChanges(changes);
     vector<MovementRect> rects;
     for (auto &mRect: mRects) {
-        auto state = mRect.getState();
+        auto state = mRect.second.getState();
         if (state != MovementRectState::ADDING) {
-            rects.push_back(mRect);
+            rects.push_back(mRect.second);
         }
     }
     fireFrameProcessed(frame, rects);
@@ -50,10 +50,10 @@ shared_ptr<MovementRect> MovementRectsFrameProcessor::findLinkedMRect(const Opti
     int maxIntersectionSquare = 0;
     Rect otherRect = rect.getPreviousRect();
     for (auto mRect = mRects.begin(); mRect != mRects.end(); ++mRect) {
-        int intersectionSquare = mRect->getIntersectionSquare(otherRect);
+        int intersectionSquare = mRect->second.getIntersectionSquare(otherRect);
         if (maxIntersectionSquare < intersectionSquare) {
             maxIntersectionSquare = intersectionSquare;
-            foundedMRect = make_shared<MovementRect>(*mRect);
+            foundedMRect = make_shared<MovementRect>(mRect->second);
         }
     }
     return foundedMRect;
@@ -64,7 +64,7 @@ map<MovementRect, shared_ptr<OpticalFlowRect> > MovementRectsFrameProcessor::fin
     const vector<OpticalFlowRect> &oRects) {
     map<MovementRect, shared_ptr<OpticalFlowRect> > linkedMRectWithORect;
     for (auto const &rect: mRects) {
-        linkedMRectWithORect[rect] = findLinkedORect(rect, oRects);
+        linkedMRectWithORect[rect.second] = findLinkedORect(rect.second, oRects);
     }
     return linkedMRectWithORect;
 }
@@ -84,16 +84,18 @@ shared_ptr<OpticalFlowRect> MovementRectsFrameProcessor::findLinkedORect(
     return foundedORect;
 }
 
-set<OpticalFlowRect> MovementRectsFrameProcessor::findForAdd(
+map<string, OpticalFlowRect> MovementRectsFrameProcessor::findForAdd(
     map<OpticalFlowRect, shared_ptr<MovementRect> > &linkedORectWithMRect,
     map<MovementRect, shared_ptr<OpticalFlowRect> > &linkedMRectWithORect) {
-    set<OpticalFlowRect> forAdd;
-    for (auto &[oRect, ptrMRect]: linkedORectWithMRect) {
-        if (ptrMRect == nullptr) {
+    map<string, OpticalFlowRect> forAdd;
+    for (auto it = linkedORectWithMRect.begin(); it != linkedORectWithMRect.end();) {
+        auto oRect = it->first;
+        if (auto ptrMRect = it->second; ptrMRect == nullptr) {
             if (Logger.isTraceEnabled()) {
                 Logger.trace("Found new optical flow rect: " + oRect.toString());
             }
-            forAdd.insert(oRect);
+            forAdd.insert_or_assign(oRect.getId(), oRect);
+            it = linkedORectWithMRect.erase(it);
             auto ptrMRect1 = isORectPresentIn(oRect, linkedMRectWithORect);
             if (ptrMRect1 != nullptr) {
                 linkedMRectWithORect[*ptrMRect1] = nullptr;
@@ -101,102 +103,101 @@ set<OpticalFlowRect> MovementRectsFrameProcessor::findForAdd(
                     "For new " + oRect.toString() + " but rect: " + ptrMRect1->toString() +
                     " links to it! Force unlink.");
             }
+        } else {
+            ++it;
         }
-    }
-    for (auto &oRect: forAdd) {
-        linkedORectWithMRect.erase(oRect);
     }
     return forAdd;
 }
 
-set<MovementRect> MovementRectsFrameProcessor::findForRemove(
+map<string, MovementRect> MovementRectsFrameProcessor::findForRemove(
     map<OpticalFlowRect, shared_ptr<MovementRect> > &linkedORectWithMRect,
     map<MovementRect, shared_ptr<OpticalFlowRect> > &linkedMRectWithORect,
-    set<OpticalFlowRect> &forAdd) {
-    set<MovementRect> forRemove;
-    for (auto &[mRect, ptrORect]: linkedMRectWithORect) {
+    map<string, OpticalFlowRect> &forAdd) {
+    map<string, MovementRect> forRemove;
+    for (auto it = linkedMRectWithORect.begin(); it != linkedMRectWithORect.end();) {
+        auto mRect = it->first;
+        auto ptrORect = it->second;
         if (ptrORect == nullptr) {
-            forRemove.insert(mRect);
+            forRemove.insert_or_assign(mRect.getId(), mRect);
+            it = linkedMRectWithORect.erase(it);
             auto ptrORect1 = isMRectPresentIn(mRect, linkedORectWithMRect);
             if (ptrORect1 != nullptr) {
                 linkedORectWithMRect.erase(*ptrORect1);
-                forAdd.insert(*ptrORect1);
+                forAdd.insert_or_assign(ptrORect1->getId(), *ptrORect1);
                 Logger.warn(
                     "For delete " + mRect.toString() + " but rect: " + ptrORect1->toString() +
                     " links to it (force unlink)!");
             }
+        } else {
+            ++it;
         }
-    }
-    for (auto &mRect: forRemove) {
-        linkedMRectWithORect.erase(mRect);
     }
     return forRemove;
 }
 
 
-map<OpticalFlowRect, set<MovementRect> > MovementRectsFrameProcessor::findForMerge(
+map<OpticalFlowRect, map<string, MovementRect> > MovementRectsFrameProcessor::findForMerge(
     map<OpticalFlowRect, shared_ptr<MovementRect> > &linkedORectWithMRect,
     map<MovementRect, shared_ptr<OpticalFlowRect> > &linkedMRectWithORect) {
-    map<OpticalFlowRect, set<MovementRect> > forMerge;
+    map<OpticalFlowRect, map<string, MovementRect> > forMerge;
     for (auto &[mRect, ptrORect]: linkedMRectWithORect) {
         if (ptrORect != nullptr) {
-            forMerge[*ptrORect].insert(mRect);
+            forMerge[*ptrORect].insert_or_assign(mRect.getId(), mRect);
         }
     }
-    set<OpticalFlowRect> excludedFromMerge;
-    for (auto &[oRect, setMRect]: forMerge) {
-        if (setMRect.size() <= 1) {
-            excludedFromMerge.insert(oRect);
+    for (auto it = forMerge.begin(); it != forMerge.end();) {
+        auto oRect = it->first;
+        auto mapMRect = it->second;
+        if (mapMRect.size() <= 1) {
+            it = forMerge.erase(it);
         } else {
             int numOfAdding = 0;
-            for (auto mRect: setMRect) {
+            for (auto &[id, mRect]: mapMRect) {
                 if (mRect.getState() == MovementRectState::ADDING) {
                     Logger.debug("Cancel ADDING STATE for: " + mRect.toString());
                     mRect.setState(MovementRectState::REMOVED);
-                    mRects.erase(mRect);
-                    mRects.insert(mRect);
+                    mRects.insert_or_assign(id, mRect);
                     numOfAdding++;
                 }
             }
-            if (setMRect.size() - numOfAdding <= 1) {
-                excludedFromMerge.insert(oRect);
+            if (mapMRect.size() - numOfAdding <= 1) {
+                it = forMerge.erase(it);
                 continue;
             }
-            for (auto &mRect: setMRect) {
+            for (auto &[id,mRect]: mapMRect) {
                 linkedMRectWithORect.erase(mRect);
             }
             linkedORectWithMRect.erase(oRect);
+            ++it;
         }
-    }
-    for (auto &oRect: excludedFromMerge) {
-        forMerge.erase(oRect);
     }
     return forMerge;
 }
 
-map<MovementRect, set<OpticalFlowRect> > MovementRectsFrameProcessor::findForSplit(
+map<MovementRect, map<string, OpticalFlowRect> > MovementRectsFrameProcessor::findForSplit(
     map<OpticalFlowRect, shared_ptr<MovementRect> > &linkedORectWithMRect,
     map<MovementRect, shared_ptr<OpticalFlowRect> > &linkedMRectWithORect) {
-    map<MovementRect, set<OpticalFlowRect> > forSplit;
+    map<MovementRect, map<string, OpticalFlowRect> > forSplit;
     for (auto &[oRect, ptrMRect]: linkedORectWithMRect) {
         if (ptrMRect != nullptr) {
-            forSplit[*ptrMRect].insert(oRect);
+            forSplit[*ptrMRect].insert_or_assign(oRect.getId(), oRect);
         }
     }
-    set<MovementRect> excludedFromSplit;
-    for (auto &[mRect, setORect]: forSplit) {
-        if (setORect.size() <= 1) {
-            excludedFromSplit.insert(mRect);
+    for (auto it = forSplit.begin(); it != forSplit.end();) {
+        auto mRect = it->first;
+        auto mapORect = it->second;
+        if (mapORect.size() <= 1) {
+            it = forSplit.erase(it);
         } else {
-            for (auto &oRect: setORect) {
+            for (auto &[id,oRect]: mapORect) {
                 linkedORectWithMRect.erase(oRect);
             }
             linkedMRectWithORect.erase(mRect);
+            ++it;
         }
     }
-    for (auto &mRect: excludedFromSplit) {
-        forSplit.erase(mRect);
-    }
+
     return forSplit;
 }
 
@@ -253,120 +254,94 @@ shared_ptr<OpticalFlowRect> MovementRectsFrameProcessor::isMRectPresentIn(const 
 
 
 void MovementRectsFrameProcessor::processChanges(const MovementRectChanges &changes) {
-    for (auto &oRectForAdd: changes.forAdd) {
+    for (auto &[id,oRectForAdd]: changes.forAdd) {
         auto mRect = MovementRect(oRectForAdd.getRect());
         Logger.debug("Add new movement rect: " + mRect.toString());
-        if (auto it = mRects.find(mRect); it != mRects.end()) {
+        if (auto it = mRects.find(mRect.getId()); it != mRects.end()) {
             auto message = "Something wrong: try to add new but it already exists in set: " + mRect.toString();
             Logger.error(message, StandardException(message));
-            mRects.erase(mRect);
+            mRects.erase(mRect.getId());
         }
-        mRects.insert(mRect);
+        mRects.insert_or_assign(mRect.getId(), mRect);
     }
-    for (MovementRect mRect: changes.forRemove) {
-        auto it = mRects.find(mRect);
-        if (it != mRects.end()) {
-            if (auto mRectForRemove = *it; mRectForRemove.getState() != MovementRectState::REMOVING) {
-                mRectForRemove.setState(MovementRectState::REMOVING);
-                mRects.erase(mRectForRemove);
-                mRects.insert(mRectForRemove);
-                Logger.debug("Set removing state for rect: " + mRectForRemove.toString());
+    for (auto &[id,mRect]: changes.forRemove) {
+        if (auto it = mRects.find(mRect.getId()); it != mRects.end()) {
+            if (it->second.getState() != MovementRectState::REMOVING) {
+                it->second.setState(MovementRectState::REMOVING);
+                Logger.debug("Set removing state for rect: " + it->second.toString());
             }
         } else {
             Logger.warn("Can't find rec: " + mRect.toString() + " in local cache!");
         }
     }
-    for (auto &[mRect, setORect]: changes.forSplit) {
-        auto it = mRects.find(mRect);
+    for (auto &[mRect, mapORect]: changes.forSplit) {
+        auto it = mRects.find(mRect.getId());
         if (it == mRects.end()) {
             Logger.warn("Can't find rec: " + mRect.toString() + ", in local cache!");
             continue;
         }
-        auto updatedMRect = *it;
-        if (it->getState() != MovementRectState::SPLITTING && it->getState() != MovementRectState::SPLITTED) {
-            updatedMRect.setState(MovementRectState::SPLITTING);
-            Logger.debug("Set SPLITING state for: " + updatedMRect.toString());
+        if (it->second.getState() != MovementRectState::SPLITTING && it->second.getState() !=
+            MovementRectState::SPLITTED) {
+            it->second.setState(MovementRectState::SPLITTING);
+            Logger.debug("Set SPLITING state for: " + it->second.toString());
         }
-        updatedMRect.incDebounce();
-        mRects.erase(updatedMRect);
-        if (updatedMRect.getState() == MovementRectState::SPLITTED) {
+        it->second.incDebounce();
+        if (it->second.getState() == MovementRectState::SPLITTED) {
             string prefixLog;
-            for (auto &oRect: setORect) {
+            for (auto &[id,oRect]: mapORect) {
                 auto mRectsSplitted = MovementRect(oRect.getRect());
                 mRectsSplitted.setState(MovementRectState::ADDED);
-                mRectsSplitted.addParentId(updatedMRect.getId());
-                mRects.insert(mRectsSplitted);
+                mRectsSplitted.addParentId(it->second.getId());
+                mRects.insert_or_assign(mRectsSplitted.getId(), mRectsSplitted);
                 prefixLog += " rect: " + mRectsSplitted.toString() + ",";
             }
-            Logger.debug("Split movement rect: " + updatedMRect.toString() + " to " + prefixLog);
-        } else {
-            mRects.insert(updatedMRect);
+            Logger.debug("Split movement rect: " + it->second.toString() + " to " + prefixLog);
+            mRects.erase(it->second.getId());
         }
     }
-    set<MovementRect> mRectsForRevertSplitting;
-    for (auto &mRect: mRects) {
+    for (auto &[id,mRect]: mRects) {
         if (mRect.getState() == MovementRectState::SPLITTING) {
-            auto it = changes.forSplit.find(mRect);
-            if (it == changes.forSplit.end()) {
-                mRectsForRevertSplitting.insert(mRect);
+            auto it1 = changes.forSplit.find(mRect);
+            if (it1 == changes.forSplit.end()) {
+                mRect.setState(MovementRectState::ADDED);
+                Logger.debug("Reverting SPLITTING for rect: " + mRect.toString());
             }
         }
     }
-    for (auto &mRect: mRectsForRevertSplitting) {
-        auto update = mRect;
-        update.setState(MovementRectState::ADDED);
-        Logger.debug("Reverting SPLITTING for rect: " + update.toString());
-        mRects.erase(update);
-        mRects.insert(update);
-    }
-    for (auto &[oRect, setMRect]: changes.forMerge) {
+
+    for (auto &[oRect, mapMRect]: changes.forMerge) {
         auto merged = MovementRect(oRect.getRect());
         merged.setState(MovementRectState::ADDED);
         string prefixLog;
-        for (auto &mRect: setMRect) {
+        for (auto &[id,mRect]: mapMRect) {
             prefixLog += " " + mRect.toString() + ",";
-            mRects.erase(mRect);
+            mRects.erase(mRect.getId());
             merged.addParentId(mRect.getId());
         }
-        if (auto it = mRects.find(merged); it != mRects.end()) {
-            auto message = "Something wrong: try to add merged but it already exists in set: " + merged.toString();
-            Logger.error(message, StandardException(message));
-            mRects.erase(merged);
-        }
-        mRects.insert(merged);
+        mRects.insert_or_assign(merged.getId(), merged);
         Logger.debug("Merge movement rects: " + prefixLog + " into rect: " + merged.toString());
     }
+
     for (auto &[mRect, oRect]: changes.forUpdate) {
-        auto it = mRects.find(mRect);
+        auto it = mRects.find(mRect.getId());
         if (it != mRects.end()) {
-            MovementRect updatedMRect = *it;
-            updatedMRect.setRect(oRect.getRect());
-            mRects.erase(mRect);
-            mRects.insert(updatedMRect);
+            it->second.setRect(oRect.getRect());
         } else {
             Logger.warn("Can't find rect: " + mRect.toString() + " in local cache");
         }
     }
-    set<MovementRect> mRectsWithRemovedStatus;
-    set<MovementRect> forUpdate;
-    for (auto &mRect: mRects) {
-        if (mRect.getState() == MovementRectState::SPLITTING) { continue; }
-        MovementRect updatedMRect = mRect;
-        updatedMRect.incDebounce();
-        forUpdate.insert(updatedMRect);
-        if (updatedMRect.getState() == MovementRectState::REMOVED) {
-            mRectsWithRemovedStatus.insert(updatedMRect);
+    for (auto it = mRects.begin(); it != mRects.end();) {
+        if (it->second.getState() == MovementRectState::SPLITTING) {
+            ++it;
+            continue;
         }
-    }
-    for (auto &mRect: forUpdate) {
-        mRects.erase(mRect);
-        mRects.insert(mRect);
-    }
-    for (auto &mRect: mRectsWithRemovedStatus) {
-        if (Logger.isTraceEnabled()) {
-            Logger.trace("Delete rect(with DELETED state) from locak cache: " + mRect.toString());
+        it->second.incDebounce();
+        if (it->second.getState() == MovementRectState::REMOVED) {
+            Logger.trace("Delete rect(with REMOVED state) from local cache: " + it->second.toString());
+            it = mRects.erase(it);
+        } else {
+            ++it;
         }
-        mRects.erase(mRect);
     }
 }
 
