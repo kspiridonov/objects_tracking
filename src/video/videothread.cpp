@@ -1,16 +1,17 @@
 #include "videothread.h"
 #include "logger/logger.h"
 #include "core/qthread/q_thread_exception.h"
+#include "core/rect/object_rect/object_rect.h"
 
 VideoThread::VideoThread(QObject *parent, QString name) : BaseQThread(parent, name),
-                                                          FrameProcessorListener<MovementRect>("VideoThread"),
+                                                          FrameProcessorListener<ObjectRect>("VideoThread"),
                                                           running(false), cameraIndex(0) {
-    movedAreasProcessor.addListener(this);
+    objectRectsFrameProcessor.addListener(this);
 }
 
 VideoThread::~VideoThread() {
     stopCapture();
-    movedAreasProcessor.removeListener(this);
+    objectRectsFrameProcessor.removeListener(this);
 }
 
 void VideoThread::startCapture(int cameraIndex) {
@@ -78,11 +79,12 @@ void VideoThread::runMethod() {
             // Convert BGR to RGB
             cv::cvtColor(frame, frame, cv::COLOR_BGR2RGB);
 
-            movedAreasProcessor.processFrame(frame);
+            objectRectsFrameProcessor.processFrame(frame);
+            //frameProcessed(frame,vector<ObjectRect>());
         }
 
         // Small delay to control frame rate
-        msleep(33); // ~30 FPS
+        //msleep(1); // ~30 FPS
     }
 
     if (cap.isOpened()) {
@@ -90,7 +92,7 @@ void VideoThread::runMethod() {
     }
 }
 
-void VideoThread::frameProcessed(Mat &frame, const vector<MovementRect> &list) {
+void VideoThread::frameProcessed(Mat &frame, const vector<ObjectRect> &list) {
     //  Create QImage from OpenCV Mat
     drawRects(frame, list);
     QImage qimage(frame.data, frame.cols, frame.rows, frame.step, QImage::Format_RGB888);
@@ -101,12 +103,18 @@ void VideoThread::frameProcessed(Mat &frame, const vector<MovementRect> &list) {
     emit frameCaptured(clonedImage);
 }
 
-void VideoThread::drawRects(Mat &frame, vector<MovementRect> rects) {
+void VideoThread::drawRects(Mat &frame, vector<ObjectRect> rects) {
     for (size_t i = 0; i < rects.size(); i++) {
-        cv::Rect bounding_box = rects[i].getRect();
-        cv::rectangle(frame, bounding_box, cv::Scalar(0, 255, 0), 2);
-        cv::putText(frame, rects[i].getId().substr(rects[i].getId().length() - 5),
-                    cv::Point(bounding_box.x, bounding_box.y - 10),
-                    cv::FONT_HERSHEY_DUPLEX, 0.7, cv::Scalar(0, 0, 0), 2, 0);
+        Rect bounding_box = rects[i].getRect();
+        auto numDetections = rects[i].getNumDetections();
+        DetectionRectType detectionType = rects[i].getType();
+        string label = EnumUtil::toString(detectionType);
+        if (numDetections > 1) {
+            label +=". Num:" + to_string(numDetections);
+        }
+        rectangle(frame, bounding_box, cv::Scalar(0, 255, 0), 2);
+        putText(frame, label,
+                cv::Point(bounding_box.x, bounding_box.y - 10),
+                cv::FONT_HERSHEY_DUPLEX, 0.5, cv::Scalar(0, 0, 0), 2, 0);
     }
 }

@@ -3,7 +3,7 @@ project(objects_tracking LANGUAGES CXX)
 set(CMAKE_PREFIX_PATH "/opt/vcpkg/installed/x64-linux;/home/ksp/Qt/6.9.0/gcc_64")
 set(CMAKE_TOOLCHAIN_FILE "ENV{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake")
 find_package(Qt6 6.5 REQUIRED COMPONENTS Core Widgets Test)
-find_package(OpenCV REQUIRED )
+find_package(OpenCV REQUIRED)
 find_package(fmt CONFIG REQUIRED)
 find_package(log4cplus CONFIG REQUIRED)
 find_package(cpptrace REQUIRED)
@@ -13,35 +13,42 @@ file(COPY res DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
 qt_standard_project_setup()
 
 qt_add_executable(objects_tracking
-    WIN32 MACOSX_BUNDLE
-    src/main.cpp
-    src/video/videothread.cpp src/video/videothread.h src/widgets/main_window/mainwindow.cpp src/widgets/main_window/mainwindow.h src/main.cpp
-    src/video/object_detector/ObjectDetector.h src/video/object_detector/ObjectDetector.cpp
-
-    src/video/object_detector/Detection.h
-    src/logger/logger.h src/logger/logger.cpp
-    src/core/exception/abstract_exception.h
-    src/core/exception/listener_already_exists_exception.h
-    src/application.h
-    src/core/qthread/base_thread.h
-    src/core/qthread/q_thread_exception.h
-    src/core/qthread/base_thread.cpp
+        WIN32 MACOSX_BUNDLE
+        src/main.cpp
+        src/video/videothread.cpp src/video/videothread.h src/widgets/main_window/mainwindow.cpp src/widgets/main_window/mainwindow.h src/main.cpp
+        src/frame_processors/object_rects_frame_processor/object_detector/ObjectDetector.h src/frame_processors/object_rects_frame_processor/object_detector/ObjectDetector.cpp
+        src/logger/logger.h src/logger/logger.cpp
+        src/core/exception/abstract_exception.h
+        src/core/exception/listener_already_exists_exception.h
+        src/application.h
+        src/core/qthread/base_thread.h
+        src/core/qthread/q_thread_exception.h
+        src/core/qthread/base_thread.cpp
 
         src/core/rect/movement_rect/movement_rect.h
         src/core/rect/movement_rect/movement_rect.cpp
 
-    src/frame_processors/base_frame_processor/base_frame_processor.h
-    src/frame_processors/base_frame_processor/base_frame_processor.cpp
-    src/frame_processors/base_frame_processor/frame_processor_listener.h
+        src/frame_processors/base_frame_processor/base_frame_processor.h
+        src/frame_processors/base_frame_processor/base_frame_processor.cpp
+        src/frame_processors/base_frame_processor/frame_processor_listener.h
 
-    src/frame_processors/optical_flow_frame_processor/optical_flow_frame_processor.h 
-    src/frame_processors/optical_flow_frame_processor/optical_flow_frame_processor.cpp
+        src/frame_processors/optical_flow_frame_processor/optical_flow_frame_processor.h
+        src/frame_processors/optical_flow_frame_processor/optical_flow_frame_processor.cpp
 
         src/frame_processors/movement_rects_frame_processor/movement_rects_frame_processor.h
         src/frame_processors/movement_rects_frame_processor/movement_rects_frame_processor.cpp
         src/core/rect/base_rect.h
         src/core/rect/optical_flow_rect/optical_flow_rect.h
         src/core/exception/standart_exception.h
+        src/frame_processors/object_rects_frame_processor/object_rects_frame_processor.cpp
+        src/frame_processors/object_rects_frame_processor/object_rects_frame_processor.h
+        src/core/rect/object_rect/object_rect.h
+        src/core/rect/object_rect/object_rect.cpp
+        src/core/rect/object_rect/object_rect.h
+        src/utils/enum_util.h
+        src/core/exception/wrong_args_exception.h
+        src/core/rect/detection_rect/detection_rect_type.h
+        src/core/rect/detection_rect/detection_rect.h
 
 )
 
@@ -52,16 +59,16 @@ set(DESTINATION_DIR "${CMAKE_CURRENT_BINARY_DIR}/res")
 
 # Add a custom target to perform the copy operation
 add_custom_target(copy_assets
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-    "${SOURCE_DIR}"
-    "${DESTINATION_DIR}"
-    COMMENT "Copying assets to build directory"
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${SOURCE_DIR}"
+        "${DESTINATION_DIR}"
+        COMMENT "Copying assets to build directory"
 )
 
 add_dependencies(objects_tracking copy_assets)
 
 target_link_libraries(objects_tracking
-    PRIVATE
+        PRIVATE
         Qt::Core
         Qt::Widgets
         Qt::Test
@@ -72,20 +79,20 @@ target_link_libraries(objects_tracking
         Boost::uuid
         magic_enum::magic_enum
 )
-include_directories( ${OpenCV_INCLUDE_DIRS} )
+include_directories(${OpenCV_INCLUDE_DIRS})
 include_directories("./src")
 include(GNUInstallDirs)
 
 install(TARGETS objects_tracking
-    BUNDLE  DESTINATION .
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        BUNDLE DESTINATION .
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )
 
 qt_generate_deploy_app_script(
-    TARGET objects_tracking
-    OUTPUT_SCRIPT deploy_script
-    NO_UNSUPPORTED_PLATFORM_ERROR
+        TARGET objects_tracking
+        OUTPUT_SCRIPT deploy_script
+        NO_UNSUPPORTED_PLATFORM_ERROR
 )
 install(SCRIPT ${deploy_script})
 

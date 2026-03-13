@@ -10,7 +10,6 @@ using namespace cv;
 using namespace std;
 
 class BaseRect {
-
 public:
     explicit BaseRect(Rect rect) : rect(rect) {
         boost::uuids::uuid uuid = boost::uuids::random_generator()();
@@ -47,7 +46,7 @@ public:
         return intersection.area();
     }
 
-    Rect getRect() const {
+    virtual Rect getRect() const {
         return rect;
     }
 
@@ -59,6 +58,12 @@ public:
         std::ostringstream ss;
         ss << "BaseRect: " << this->id;
         return ss.str();
+    }
+
+    bool inRect(const Rect &rect4Check, int delta) const {
+        return rect.x - delta > rect4Check.x && rect.y - delta > rect4Check.y && rect.x + rect.width + delta <
+               rect4Check.width
+               && rect.y + rect.height + delta < rect4Check.height;
     }
 
 protected:
