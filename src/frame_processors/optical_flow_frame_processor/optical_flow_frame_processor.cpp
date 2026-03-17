@@ -2,9 +2,17 @@
 #include <opencv2/highgui.hpp>
 #include "logger/logger.h"
 
-void OpticalFlowFrameProcessor::processFrame(Mat &currentFrame) {
+void OpticalFlowFrameProcessor::processFrame(Mat &frame) {
+    Mat currentFrame = frame.clone();
+    if (scaleFactor == 0) {
+        scaleFactor = (float) fitWidth / float(currentFrame.cols);
+    }
+    Size new_size(currentFrame.cols * scaleFactor, currentFrame.rows * scaleFactor);
+    resize(currentFrame, currentFrame, new_size, 0, 0, cv::INTER_LINEAR);
+
     if (previousFrame.empty()) {
         previousFrame = currentFrame.clone();
+        previousFrameOriginScale = frame.clone();
         return;
     }
 
@@ -25,12 +33,13 @@ void OpticalFlowFrameProcessor::processFrame(Mat &currentFrame) {
         calcOpticalFlowFarneback(previousGray, currentGray, flowImage, pyrScale,
                                  numLevels, windowSize, numIterations,
                                  neighborhoodSize, stdDeviation, 0);
-        Mat result = previousFrame.clone();
+        Mat result = previousFrameOriginScale.clone();
         Mat clonedFlowImage = flowImage.clone();
         vector<Rect> rects = findRects(clonedFlowImage);
         auto rectsInfo = getOpticalFlowRects(result, flowImage, rects);
 
         previousFrame = currentFrame.clone();
+        previousFrameOriginScale = frame.clone();
         if (showDebugInfo) {
             vector<Rect> rectsToDraw;
             vector<Rect> movedRectsToDraw;
@@ -77,7 +86,7 @@ void OpticalFlowFrameProcessor::drawOpticalFlowOnResult(const Mat &flowImage, Ma
 
 vector<Rect> OpticalFlowFrameProcessor::findRects(const Mat &flowImage) {
     vector<Rect> rects;
-    double threshold = 4.0;
+    double threshold = 3.0;
     cv::Mat magnitude, angle;
     std::vector<cv::Mat> flow_channels;
     cv::split(flowImage, flow_channels);
@@ -113,18 +122,16 @@ void OpticalFlowFrameProcessor::drawRectanglesOnResult(vector<Rect> &rects, Mat 
 }
 
 vector<OpticalFlowRect> OpticalFlowFrameProcessor::getOpticalFlowRects(Mat &frame, const Mat &flowImage,
-                                                                               const vector<Rect> &rects) {
+                                                                       const vector<Rect> &rects) {
     vector<OpticalFlowRect> opticalFlowRects;
     for (auto rect: rects) {
         auto croppedOpticalFlow = Mat(flowImage, rect);
-        auto croppedFrame = frame(rect);
         double avgX = 0;
         double avgY = 0;
         float n = 0;
         for (int y = 0; y < croppedOpticalFlow.rows; y++) {
             for (int x = 0; x < croppedOpticalFlow.cols; x++) {
                 Point2f pt = croppedOpticalFlow.at<Point2f>(y, x);
-                //croppedFrame.at<cv::Vec3b>(y, x) = cv::Vec3b(0, 0, 255);
                 if (const auto distance = std::sqrt(std::pow(pt.x, 2) + std::pow(pt.y, 2)); distance > 6) {
                     avgX += pt.x;
                     avgY += pt.y;
@@ -143,8 +150,11 @@ vector<OpticalFlowRect> OpticalFlowFrameProcessor::getOpticalFlowRects(Mat &fram
         int roundedPtY = -1 * cvRound(ptY);
         movedRect.x += roundedPtX;
         movedRect.y += roundedPtY;
-        opticalFlowRects.push_back(OpticalFlowRect(rect, movedRect));
-        if (showDebugInfo)drawOpticalFlowOnResult(croppedOpticalFlow, croppedFrame, &roundedPtX, &roundedPtY);
+        opticalFlowRects.push_back(OpticalFlowRect(Rect(rect.x / scaleFactor, rect.y / scaleFactor,
+                                                        rect.width / scaleFactor, rect.height / scaleFactor),
+                                                   Rect(movedRect.x / scaleFactor, movedRect.y / scaleFactor,
+                                                        movedRect.width / scaleFactor,
+                                                        movedRect.height / scaleFactor)));
     }
     return opticalFlowRects;
 }

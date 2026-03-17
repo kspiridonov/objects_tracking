@@ -267,8 +267,13 @@ void MovementRectsFrameProcessor::processChanges(const MovementRectChanges &chan
     for (auto &[id,mRect]: changes.forRemove) {
         if (auto it = mRects.find(mRect.getId()); it != mRects.end()) {
             if (it->second.getState() != MovementRectState::REMOVING) {
-                it->second.setState(MovementRectState::REMOVING);
-                Logger.debug("Set removing state for rect: " + it->second.toString());
+                if (it->second.getState() == MovementRectState::ADDING) {
+                    it->second.setState(MovementRectState::REMOVED);
+                    Logger.debug("Set removed state for rect: " + it->second.toString());
+                }else {
+                    it->second.setState(MovementRectState::REMOVING);
+                    Logger.debug("Set removing state for rect: " + it->second.toString());
+                }
             }
         } else {
             Logger.warn("Can't find rec: " + mRect.toString() + " in local cache!");

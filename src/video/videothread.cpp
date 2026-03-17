@@ -78,7 +78,6 @@ void VideoThread::runMethod() {
         if (!frame.empty()) {
             // Convert BGR to RGB
             cv::cvtColor(frame, frame, cv::COLOR_BGR2RGB);
-
             objectRectsFrameProcessor.processFrame(frame);
             //frameProcessed(frame,vector<ObjectRect>());
         }

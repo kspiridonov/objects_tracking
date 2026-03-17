@@ -24,6 +24,9 @@ protected:
 private:
     bool showDebugInfo = false;
     Mat previousFrame;
+    Mat previousFrameOriginScale;
+    int fitWidth = 500;
+    float scaleFactor = 0;
 };
 
 #endif // OPTICALFLOW_H
